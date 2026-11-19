@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Twilio Studio — SMS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['-apple-system', 'BlinkMacSystemFont', '"SF Pro Display"', '"IBM Plex Sans Arabic"', 'sans-serif'],
+          },
+          colors: {
+            apple: {
+              blue: '#0071e3',
+              blueHover: '#0077ed',
+              bgLight: '#f5f5f7',
+              bgDark: '#000000',
+              cardLight: 'rgba(255, 255, 255, 0.78)',
+              cardDark: 'rgba(28, 28, 30, 0.78)',
+              borderLight: 'rgba(0, 0, 0, 0.08)',
+              borderDark: 'rgba(255, 255, 255, 0.12)',
+              green: '#34c759',
+              red: '#ff3b30',
+              orange: '#ff9500',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "IBM Plex Sans Arabic", sans-serif;
+      -webkit-font-smoothing: antialiased;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    .apple-glass {
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+    }
+    .apple-input {
+      transition: all 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
+    }
+    .apple-input:focus {
+      outline: none;
+      box-shadow: 0 0 0 3.5px rgba(0, 113, 227, 0.25);
+      border-color: #0071e3;
+    }
+    .apple-btn {
+      transition: transform 0.15s ease, background-color 0.2s ease, opacity 0.2s ease;
+    }
+    .apple-btn:active:not(:disabled) {
+      transform: scale(0.97);
+    }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(142, 142, 147, 0.35); border-radius: 999px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(142, 142, 147, 0.55); }
+  </style>
+</head>
+<body class="bg-apple-bgLight text-[#1d1d1f] dark:bg-apple-bgDark dark:text-[#f5f5f7] min-h-screen selection:bg-apple-blue selection:text-white">
+
+  <!-- Top Navigation Bar (macOS style) -->
+  <header class="sticky top-0 z-30 apple-glass bg-white/75 dark:bg-[#1c1c1e]/75 border-b border-apple-borderLight dark:border-apple-borderDark">
+    <div class="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-b from-[#2997ff] to-[#0071e3] flex items-center justify-center text-white shadow-sm">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/>
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-base font-semibold tracking-tight leading-none">SMS Studio</h1>
+          <p class="text-[11px] text-[#86868b] mt-1">Twilio Cloud Gateway</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <!-- Segmented Control: Demo vs Live -->
+        <div class="bg-[#e8e8ed] dark:bg-[#2c2c2e] p-1 rounded-full flex items-center text-xs font-medium">
+          <button id="modeDemoBtn" onclick="setMode('demo')" class="px-3.5 py-1.5 rounded-full bg-white dark:bg-[#3a3a3c] shadow-sm text-[#1d1d1f] dark:text-white transition-all">
+            وضع التجربة
+          </button>
+          <button id="modeLiveBtn" onclick="setMode('live')" class="px-3.5 py-1.5 rounded-full text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white transition-all flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-apple-green"></span>
+            إرسال حقيقي
+          </button>
+        </div>
+
+        <!-- Theme Toggle -->
+        <button onclick="toggleTheme()" title="تغيير المظهر" class="w-9 h-9 rounded-full bg-[#e8e8ed]/70 dark:bg-[#2c2c2e] flex items-center justify-center text-[#1d1d1f] dark:text-[#f5f5f7] hover:opacity-80 transition">
+          <svg id="sunIcon" class="w-4 h-4 hidden dark:block" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+          </svg>
+          <svg id="moonIcon" class="w-4 h-4 block dark:hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Workspace -->
+  <main class="max-w-6xl mx-auto px-5 py-8 space-y-6">
+
+    <!-- Status Banner -->
+    <div id="modeBanner" class="rounded-2xl px-4 py-3 text-xs flex items-center justify-between bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-300">
+      <div class="flex items-center gap-2.5">
+        <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+        <span id="modeBannerText">أنت الآن في <strong>وضع التجربة (Demo Mode)</strong> — لن يتم خصم أي رصيد من حساب Twilio.</span>
+      </div>
+      <span class="text-[11px] opacity-75">جاهز للاختبار</span>
+    </div>
+
+    <!-- Top Grid: Credentials + Message Composer -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+      <!-- Left Column: Twilio Config & Recipients (5 cols) -->
+      <div class="lg:col-span-5 space-y-6">
+        
+        <!-- Twilio Credentials Card -->
+        <section class="apple-glass bg-apple-cardLight dark:bg-apple-cardDark border border-apple-borderLight dark:border-apple-borderDark rounded-3xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+          <div class="flex items-center justify-between mb-4">
+            <h2 class="text-sm font-semibold">إعدادات حساب Twilio</h2>
+            <button onclick="saveCredentials()" class="text-xs text-apple-blue hover:underline font-medium">حفظ في المتصفح</button>
+          </div>
+
+          <div class="space-y-3.5">
+            <div>
+              <label class="block text-xs text-[#86868b] mb-1">Account SID</label>
+              <input id="accountSid" type="text" dir="ltr" placeholder="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                class="apple-input w-full px-3.5 py-2.5 rounded-xl text-sm bg-white/80 dark:bg-[#2c2c2e]/80 border border-apple-borderLight dark:border-apple-borderDark font-mono" />
+            </div>
+
+            <div>
+              <label class="block text-xs text-[#86868b] mb-1">Auth Token</label>
+              <input id="authToken" type="password" dir="ltr" placeholder="••••••••••••••••••••••••••••••••"
+                class="apple-input w-full px-3.5 py-2.5 rounded-xl text-sm bg-white/80 dark:bg-[#2c2c2e]/80 border border-apple-borderLight dark:border-apple-borderDark font-mono" />
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs text-[#86868b] mb-1">رقم الإرسال (From)</label>
+                <input id="fromNumber" type="text" dir="ltr" placeholder="+1234567890"
+                  class="apple-input w-full px-3.5 py-2.5 rounded-xl text-sm bg-white/80 dark:bg-[#2c2c2e]/80 border border-apple-borderLight dark:border-apple-borderDark font-mono" />
+              </div>
+              <div>
+                <label class="block text-xs text-[#86868b] mb-1">الفاصل الزمني (ثانية)</label>
+                <input id="delaySeconds" type="number" step="0.2" min="0.2" value="1.0" dir="ltr"
+                  class="apple-input w-full px-3.5 py-2.5 rounded-xl text-sm bg-white/80 dark:bg-[#2c2c2e]/80 border border-apple-borderLight dark:border-apple-borderDark font-mono" />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Recipients Card -->
+        <section class="apple-glass bg-apple-cardLight dark:bg-apple-cardDark border border-apple-borderLight dark:border-apple-borderDark rounded-3xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-sm font-semibold">قائمة المستلمين</h2>
+            <div class="flex items-center gap-2">
+              <label class="cursor-pointer text-xs bg-[#e8e8ed] dark:bg-[#2c2c2e] hover:opacity-80 px-3 py-1.5 rounded-full font-medium transition">
+                رفع ملف CSV
+                <input type="file" id="csvInput" accept=".csv,.txt" class="hidden" onchange="handleCSVUpload(event)" />
+              </label>
+              <button onclick="loadSampleRecipients()" class="text-xs text-apple-blue hover:underline font-medium">نموذج</button>
+            </div>
+          </div>
+
+          <textarea id="recipientsInput" rows="6" dir="ltr" oninput="parseRecipients()"
+            placeholder="+212600000001, أحمد&#10;+212600000002, سارة&#10;+212600000003"
+            class="apple-input w-full p-3.5 rounded-2xl text-xs bg-white/80 dark:bg-[#2c2c2e]/80 border border-apple-borderLight dark:border-apple-borderDark font-mono leading-relaxed resize-none"></textarea>
+
+          <div class="mt-3 flex items-center justify-between text-xs text-[#86868b]">
+            <span>الصيغة: <code class="text-[#1d1d1f] dark:text-white">+2126...</code> أو <code class="text-[#1d1d1f] dark:text-white">رقم, اسم</code></span>
+            <span id="validCountBadge" class="font-semibold text-apple-blue">0 رقم صالح</span>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- Right Column: Message Editor & Campaign Controls (7 cols) -->
+      <div class="lg:col-span-7 flex flex-col justify-between space-y-6">
+        
+        <!-- Message Composer Card -->
+        <section class="apple-glass bg-apple-cardLight dark:bg-apple-cardDark border border-apple-borderLight dark:border-apple-borderDark rounded-3xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] flex-1 flex flex-col">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-sm font-semibold">نص الرسالة (SMS)</h2>
+            <div class="flex items-center gap-1.5">
+              <button onclick="insertTag('{name}')" class="text-[11px] px-2.5 py-1 rounded-lg bg-[#e8e8ed] dark:bg-[#2c2c2e] hover:bg-apple-blue hover:text-white transition font-mono">
+                + {name}
+              </button>
+              <button onclick="insertTag('{phone}')" class="text-[11px] px-2.5 py-1 rounded-lg bg-[#e8e8ed] dark:bg-[#2c2c2e] hover:bg-apple-blue hover:text-white transition font-mono">
+                + {phone}
+              </button>
+            </div>
+          </div>
+
+          <textarea id="messageBody" rows="7" oninput="updateStats()"
+            placeholder="سلام {name}، كنشكروك على تواصلك معنا..."
+            class="apple-input w-full flex-1 p-4 rounded-2xl text-sm bg-white/80 dark:bg-[#2c2c2e]/80 border border-apple-borderLight dark:border-apple-borderDark leading-relaxed resize-none"></textarea>
+
+          <!-- Live Segment & Encoding Counter -->
+          <div class="mt-4 pt-3 border-t border-apple-borderLight dark:border-apple-borderDark flex flex-wrap items-center justify-between gap-2 text-xs text-[#86868b]">
+            <div class="flex items-center gap-4">
+              <span>الحروف: <strong id="charCount" class="text-[#1d1d1f] dark:text-white">0</strong></span>
+              <span>عدد الرسائل (Segments): <strong id="segmentCount" class="text-apple-blue">0</strong></span>
+              <span id="encodingBadge" class="px-2 py-0.5 rounded-md bg-[#e8e8ed] dark:bg-[#2c2c2e] text-[11px]">GSM-7</span>
+            </div>
+            <div>
+              إجمالي الإرسال المتوقع: <strong id="totalSegmentsCount" class="text-[#1d1d1f] dark:text-white">0</strong> رسالة
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="mt-6 flex flex-wrap items-center gap-3">
+            <button id="startBtn" onclick="startCampaign()" class="apple-btn flex-1 bg-apple-blue hover:bg-apple-blueHover text-white font-medium text-sm py-3 px-6 rounded-2xl shadow-sm flex items-center justify-center gap-2 disabled:opacity-40">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"/></svg>
+              <span>بدء الإرسال الآن</span>
+            </button>
+
+            <button id="pauseBtn" onclick="togglePause()" disabled class="apple-btn bg-[#e8e8ed] dark:bg-[#2c2c2e] text-[#1d1d1f] dark:text-white font-medium text-sm py-3 px-5 rounded-2xl disabled:opacity-40">
+              إيقاف مؤقت
+            </button>
+
+            <button id="stopBtn" onclick="stopCampaign()" disabled class="apple-btn bg-apple-red/10 text-apple-red hover:bg-apple-red hover:text-white font-medium text-sm py-3 px-5 rounded-2xl disabled:opacity-40">
+              إلغاء
+            </button>
+          </div>
+        </section>
+
+        <!-- Progress & Live Metrics Card -->
+        <section class="apple-glass bg-apple-cardLight dark:bg-apple-cardDark border border-apple-borderLight dark:border-apple-borderDark rounded-3xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+          <div class="flex items-center justify-between text-xs mb-2">
+            <span class="font-medium text-[#86868b]">تقدم الحملة</span>
+            <span id="progressPercent" class="font-semibold">0%</span>
+          </div>
+          
+          <div class="w-full h-2.5 bg-[#e8e8ed] dark:bg-[#2c2c2e] rounded-full overflow-hidden mb-5">
+            <div id="progressBar" class="h-full bg-apple-blue transition-all duration-300 rounded-full" style="width: 0%"></div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-3 text-center">
+            <div class="p-3 rounded-2xl bg-white/60 dark:bg-[#2c2c2e]/60">
+              <div class="text-[11px] text-[#86868b]">الإجمالي</div>
+              <div id="statTotal" class="text-lg font-semibold mt-0.5">0</div>
+            </div>
+            <div class="p-3 rounded-2xl bg-apple-green/10">
+              <div class="text-[11px] text-apple-green">تم الإرسال</div>
+              <div id="statSuccess" class="text-lg font-semibold text-apple-green mt-0.5">0</div>
+            </div>
+            <div class="p-3 rounded-2xl bg-apple-red/10">
+              <div class="text-[11px] text-apple-red">فشل</div>
+              <div id="statFailed" class="text-lg font-semibold text-apple-red mt-0.5">0</div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+
+    <!-- Live Logs Table -->
+    <section class="apple-glass bg-apple-cardLight dark:bg-apple-cardDark border border-apple-borderLight dark:border-apple-borderDark rounded-3xl p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <div class="flex items-center gap-3">
+          <h2 class="text-sm font-semibold">سجل الإرسال المباشر</h2>
+          <div class="flex items-center gap-1 bg-[#e8e8ed] dark:bg-[#2c2c2e] p-1 rounded-xl text-xs">
+            <button onclick="filterLogs('all')" id="filterAll" class="px-2.5 py-1 rounded-lg bg-white dark:bg-[#3a3a3c] shadow-sm font-medium">الكل</button>
+            <button onclick="filterLogs('success')" id="filterSuccess" class="px-2.5 py-1 rounded-lg text-[#86868b]">الناجحة</button>
+            <button onclick="filterLogs('failed')" id="filterFailed" class="px-2.5 py-1 rounded-lg text-[#86868b]">الفاشلة</button>
+          </div>
+        </div>
+
+        <button onclick="exportCSV()" class="text-xs bg-[#e8e8ed] dark:bg-[#2c2c2e] hover:opacity-80 px-3.5 py-2 rounded-xl font-medium transition flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          تصدير التقرير CSV
+        </button>
+      </div>
+
+      <div class="overflow-x-auto max-h-80">
+        <table class="w-full text-right border-collapse">
+          <thead>
+            <tr class="border-b border-apple-borderLight dark:border-apple-borderDark text-[11px] text-[#86868b]">
+              <th class="py-2.5 px-3 font-medium">#</th>
+              <th class="py-2.5 px-3 font-medium">الاسم</th>
+              <th class="py-2.5 px-3 font-medium">رقم الهاتف</th>
+              <th class="py-2.5 px-3 font-medium">الحالة</th>
+              <th class="py-2.5 px-3 font-medium">التفاصيل / SID</th>
+            </tr>
+          </thead>
+          <tbody id="logsTableBody" class="text-xs divide-y divide-apple-borderLight dark:divide-apple-borderDark">
+            <tr>
+              <td colspan="5" class="py-8 text-center text-[#86868b]">لا توجد عمليات إرسال بعد. أضف الأرقام واضغط على بدء الإرسال.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    let currentMode = 'demo';
+    let recipientsList = [];
+    let logsData = [];
+    let currentFilter = 'all';
+    let isRunning = false;
+    let isPaused = false;
+    let isCancelled = false;
+
+    // Load saved credentials on boot
+    window.addEventListener('DOMContentLoaded', () => {
+      const saved = JSON.parse(localStorage.getItem('twilio_studio_cfg') || '{}');
+      if (saved.sid) document.getElementById('accountSid').value = saved.sid;
+      if (saved.token) document.getElementById('authToken').value = saved.token;
+      if (saved.from) document.getElementById('fromNumber').value = saved.from;
+    });
+
+    function saveCredentials() {
+      const cfg = {
+        sid: document.getElementById('accountSid').value.trim(),
+        token: document.getElementById('authToken').value.trim(),
+        from: document.getElementById('fromNumber').value.trim(),
+      };
+      localStorage.setItem('twilio_studio_cfg', JSON.stringify(cfg));
+      alert('تم حفظ الإعدادات في متصفحك بأمان.');
+    }
+
+    function toggleTheme() {
+      document.documentElement.classList.toggle('dark');
+    }
+
+    function setMode(mode) {
+      currentMode = mode;
+      const demoBtn = document.getElementById('modeDemoBtn');
+      const liveBtn = document.getElementById('modeLiveBtn');
+      const banner = document.getElementById('modeBanner');
+      const bannerText = document.getElementById('modeBannerText');
+
+      if (mode === 'demo') {
+        demoBtn.className = 'px-3.5 py-1.5 rounded-full bg-white dark:bg-[#3a3a3c] shadow-sm text-[#1d1d1f] dark:text-white transition-all';
+        liveBtn.className = 'px-3.5 py-1.5 rounded-full text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white transition-all flex items-center gap-1.5';
+        banner.className = 'rounded-2xl px-4 py-3 text-xs flex items-center justify-between bg-amber-500/10 border border-amber-500/20 text-amber-800 dark:text-amber-300';
+        bannerText.innerHTML = 'أنت الآن في <strong>وضع التجربة (Demo Mode)</strong> — لن يتم خصم أي رصيد من حساب Twilio.';
+      } else {
+        liveBtn.className = 'px-3.5 py-1.5 rounded-full bg-white dark:bg-[#3a3a3c] shadow-sm text-[#1d1d1f] dark:text-white transition-all flex items-center gap-1.5';
+        demoBtn.className = 'px-3.5 py-1.5 rounded-full text-[#86868b] hover:text-[#1d1d1f] dark:hover:text-white transition-all';
+        banner.className = 'rounded-2xl px-4 py-3 text-xs flex items-center justify-between bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 dark:text-emerald-300';
+        bannerText.innerHTML = 'أنت الآن في <strong>الوضع الحقيقي (Live Mode)</strong> — سيتم إرسال الرسائل فعلياً عبر Twilio.';
+      }
+    }
+
+    function loadSampleRecipients() {
+      document.getElementById('recipientsInput').value = "+212661000001, يوسف\n+212661000002, سلمى\n+212661000003, كريم";
+      parseRecipients();
+    }
+
+    function handleCSVUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        document.getElementById('recipientsInput').value = event.target.result;
+        parseRecipients();
+      };
+      reader.readAsText(file);
+    }
+
+    function parseRecipients() {
+      const raw = document.getElementById('recipientsInput').value;
+      const lines = raw.split(/\r?\n/);
+      const seen = new Set();
+      recipientsList = [];
+
+      for (let line of lines) {
+        line = line.trim();
+        if (!line) continue;
+        const parts = line.split(/[,;\t]/);
+        let phone = parts[0].replace(/[\s\-()]/g, '');
+        let name = parts[1] ? parts[1].trim() : 'عميلنا';
+
+        if (!phone.startsWith('+') && /^\d{8,15}$/.test(phone)) {
+          phone = '+' + phone;
+        }
+
+        if (/^\+\d{8,15}$/.test(phone) && !seen.has(phone)) {
+          seen.add(phone);
+          recipientsList.push({ phone, name });
+        }
+      }
+
+      document.getElementById('validCountBadge').textContent = `${recipientsList.length} رقم صالح`;
+      updateStats();
+    }
+
+    function insertTag(tag) {
+      const textarea = document.getElementById('messageBody');
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const text = textarea.value;
+      textarea.value = text.substring(0, start) + tag + text.substring(end);
+      textarea.focus();
+      textarea.selectionStart = textarea.selectionEnd = start + tag.length;
+      updateStats();
+    }
+
+    function updateStats() {
+      const text = document.getElementById('messageBody').value;
+      const len = text.length;
+      const isUnicode = /[^\u0000-\u007F]/.test(text);
+      const singleLimit = isUnicode ? 70 : 160;
+      const multiLimit = isUnicode ? 67 : 153;
+
+      let segments = 0;
+      if (len > 0) {
+        segments = len <= singleLimit ? 1 : Math.ceil(len / multiLimit);
+      }
+
+      document.getElementById('charCount').textContent = len;
+      document.getElementById('segmentCount').textContent = segments;
+      document.getElementById('encodingBadge').textContent = isUnicode ? 'Unicode (عربي)' : 'GSM-7 (لاتيني)';
+      document.getElementById('totalSegmentsCount').textContent = segments * recipientsList.length;
+    }
+
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+    async function startCampaign() {
+      parseRecipients();
+      const messageTemplate = document.getElementById('messageBody').value.trim();
+
+      if (recipientsList.length === 0) return alert('عافاك دخل رقم واحد على الأقل بصيغة صحيحة (+212...)');
+      if (!messageTemplate) return alert('عافاك كتب نص الرسالة أولاً.');
+
+      const sid = document.getElementById('accountSid').value.trim();
+      const token = document.getElementById('authToken').value.trim();
+      const from = document.getElementById('fromNumber').value.trim();
+      const delay = Math.max(200, parseFloat(document.getElementById('delaySeconds').value || 1) * 1000);
+
+      if (currentMode === 'live' && (!sid || !token || !from)) {
+        return alert('في الوضع الحقيقي خاصك تدخل Account SID و Auth Token ورقم الإرسال.');
+      }
+
+      isRunning = true;
+      isPaused = false;
+      isCancelled = false;
+      logsData = [];
+
+      document.getElementById('startBtn').disabled = true;
+      document.getElementById('pauseBtn').disabled = false;
+      document.getElementById('stopBtn').disabled = false;
+
+      let success = 0;
+      let failed = 0;
+      const total = recipientsList.length;
+
+      document.getElementById('statTotal').textContent = total;
+      document.getElementById('statSuccess').textContent = 0;
+      document.getElementById('statFailed').textContent = 0;
+
+      for (let i = 0; i < total; i++) {
+        if (isCancelled) break;
+        while (isPaused && !isCancelled) {
+          await sleep(250);
+        }
+        if (isCancelled) break;
+
+        const r = recipientsList[i];
+        const personalizedBody = messageTemplate
+          .replace(/\{name\}/gi, r.name)
+          .replace(/\{phone\}/gi, r.phone);
+
+        let status = 'success';
+        let info = '';
+
+        if (currentMode === 'demo') {
+          await sleep(300);
+          info = 'SM_DEMO_' + Math.random().toString(36).substring(2, 10).toUpperCase();
+        } else {
+          try {
+            const res = await fetch('/api/send', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                accountSid: sid,
+                authToken: token,
+                from: from,
+                to: r.phone,
+                body: personalizedBody
+              })
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+              status = 'success';
+              info = data.sid;
+            } else {
+              status = 'failed';
+              info = data.error || 'فشل الإرسال';
+            }
+          } catch (err) {
+            status = 'failed';
+            info = 'خطأ في الاتصال بالسيرفر';
+          }
+        }
+
+        if (status === 'success') success++;
+        else failed++;
+
+        logsData.unshift({
+          index: i + 1,
+          name: r.name,
+          phone: r.phone,
+          status,
+          info
+        });
+
+        const pct = Math.round(((i + 1) / total) * 100);
+        document.getElementById('progressBar').style.width = pct + '%';
+        document.getElementById('progressPercent').textContent = pct + '%';
+        document.getElementById('statSuccess').textContent = success;
+        document.getElementById('statFailed').textContent = failed;
+
+        renderLogs();
+
+        if (i < total - 1 && !isCancelled) {
+          await sleep(delay);
+        }
+      }
+
+      isRunning = false;
+      document.getElementById('startBtn').disabled = false;
+      document.getElementById('pauseBtn').disabled = true;
+      document.getElementById('stopBtn').disabled = true;
+      document.getElementById('pauseBtn').textContent = 'إيقاف مؤقت';
+    }
+
+    function togglePause() {
+      isPaused = !isPaused;
+      document.getElementById('pauseBtn').textContent = isPaused ? 'استئناف' : 'إيقاف مؤقت';
+    }
+
+    function stopCampaign() {
+      isCancelled = true;
+      isPaused = false;
+    }
+
+    function filterLogs(type) {
+      currentFilter = type;
+      ['All', 'Success', 'Failed'].forEach(t => {
+        const btn = document.getElementById('filter' + t);
+        if (t.toLowerCase() === type) {
+          btn.className = 'px-2.5 py-1 rounded-lg bg-white dark:bg-[#3a3a3c] shadow-sm font-medium';
+        } else {
+          btn.className = 'px-2.5 py-1 rounded-lg text-[#86868b]';
+        }
+      });
+      renderLogs();
+    }
+
+    function renderLogs() {
+      const tbody = document.getElementById('logsTableBody');
+      const filtered = logsData.filter(item => currentFilter === 'all' || item.status === currentFilter);
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-[#86868b]">لا توجد بيانات مطابقة للفلتر الحالي.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(item => `
+        <tr class="hover:bg-black/[0.02] dark:hover:bg-white/[0.02] transition">
+          <td class="py-2.5 px-3 text-[#86868b]">${item.index}</td>
+          <td class="py-2.5 px-3 font-medium">${item.name}</td>
+          <td class="py-2.5 px-3 font-mono" dir="ltr">${item.phone}</td>
+          <td class="py-2.5 px-3">
+            ${item.status === 'success'
+              ? '<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-apple-green/15 text-apple-green">تم الإرسال</span>'
+              : '<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-apple-red/15 text-apple-red">فشل</span>'
+            }
+          </td>
+          <td class="py-2.5 px-3 font-mono text-[11px] text-[#86868b]" dir="ltr">${item.info}</td>
+        </tr>
+      `).join('');
+    }
+
+    function exportCSV() {
+      if (logsData.length === 0) return alert('لا يوجد سجل لتصديره.');
+      const header = 'Index,Name,Phone,Status,Details\n';
+      const rows = logsData.map(r => `${r.index},"${r.name}","${r.phone}",${r.status},"${r.info}"`).join('\n');
+      const blob = new Blob(["\uFEFF" + header + rows], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `twilio-report-${new Date().toISOString().slice(0,10)}.csv`;
+      a.click();
+    }
+  </script>
+</body>
+</html>
